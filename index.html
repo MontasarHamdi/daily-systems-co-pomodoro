@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Daily Systems Pomodoro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <style>
+    body {
+      margin: 0;
+      background: #0f0f0f;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .pomodoro {
+      background: #1b1b1b;
+      border-radius: 16px;
+      padding: 24px;
+      width: 320px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      text-align: center;
+    }
+
+    .modes {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .mode {
+      flex: 1;
+      margin: 0 4px;
+      padding: 8px 0;
+      border-radius: 10px;
+      cursor: pointer;
+      background: #262626;
+      font-size: 13px;
+      opacity: 0.6;
+    }
+
+    .mode.active {
+      background: #ffffff;
+      color: #000000;
+      opacity: 1;
+      font-weight: 600;
+    }
+
+    .timer {
+      font-size: 64px;
+      font-weight: 700;
+      margin: 20px 0;
+      letter-spacing: 2px;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
+    button {
+      flex: 1;
+      margin: 0 6px;
+      padding: 12px 0;
+      border-radius: 12px;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .start {
+      background: #ffffff;
+      color: #000000;
+      font-weight: 600;
+    }
+
+    .reset {
+      background: #2d2d2d;
+      color: #ffffff;
+    }
+
+    .settings {
+      margin-top: 16px;
+      font-size: 13px;
+      opacity: 0.7;
+      cursor: pointer;
+    }
+
+    .panel {
+      display: none;
+      margin-top: 16px;
+      background: #151515;
+      padding: 16px;
+      border-radius: 12px;
+      text-align: left;
+    }
+
+    .panel label {
+      font-size: 12px;
+      opacity: 0.7;
+    }
+
+    .panel input, .panel select {
+      width: 100%;
+      margin-top: 6px;
+      margin-bottom: 12px;
+      padding: 6px;
+      background: #262626;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+    }
+
+    .save {
+      width: 100%;
+      padding: 10px;
+      background: #ffffff;
+      color: #000;
+      border-radius: 10px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="pomodoro">
+  <div class="modes">
+    <div class="mode active" onclick="setMode('pomodoro')">Pomodoro</div>
+    <div class="mode" onclick="setMode('short')">Short</div>
+    <div class="mode" onclick="setMode('long')">Long</div>
+  </div>
+
+  <div class="timer" id="timer">25:00</div>
+
+  <div class="controls">
+    <button class="start" onclick="startPause()">Start</button>
+    <button class="reset" onclick="resetTimer()">Reset</button>
+  </div>
+
+  <div class="settings" onclick="toggleSettings()">⚙ Settings</div>
+
+  <div class="panel" id="settingsPanel">
+    <label>Pomodoro (minutes)</label>
+    <input type="number" id="pomodoroTime" value="25">
+
+    <label>Short Break (minutes)</label>
+    <input type="number" id="shortTime" value="5">
+
+    <label>Long Break (minutes)</label>
+    <input type="number" id="longTime" value="15">
+
+    <label>Alert Sound</label>
+    <select id="sound">
+      <option value="beep">Beep</option>
+      <option value="soft">Soft</option>
+      <option value="none">None</option>
+    </select>
+
+    <button class="save" onclick="saveSettings()">Save</button>
+  </div>
+</div>
+
+<script>
+  let timer;
+  let running = false;
+  let mode = 'pomodoro';
+  let timeLeft = 25 * 60;
+
+  const times = {
+    pomodoro: 25,
+    short: 5,
+    long: 15
+  };
+
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll('.mode').forEach(el => el.classList.remove('active'));
+    document.querySelector(`.mode:nth-child(${m === 'pomodoro' ? 1 : m === 'short' ? 2 : 3})`).classList.add('active');
+    resetTimer();
+  }
+
+  function startPause() {
+    if (running) {
+      clearInterval(timer);
+      running = false;
+      return;
+    }
+    running = true;
+    timer = setInterval(() => {
+      if (timeLeft <= 0) {
+        clearInterval(timer);
+        running = false;
+        playSound();
+        return;
+      }
+      timeLeft--;
+      updateDisplay();
+    }, 1000);
+  }
+
+  function resetTimer() {
+    clearInterval(timer);
+    running = false;
+    timeLeft = times[mode] * 60;
+    updateDisplay();
+  }
+
+  function updateDisplay() {
+    const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+    const s = (timeLeft % 60).toString().padStart(2, '0');
+    document.getElementById('timer').textContent = `${m}:${s}`;
+  }
+
+  function toggleSettings() {
+    const panel = document.getElementById('settingsPanel');
+    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+  }
+
+  function saveSettings() {
+    times.pomodoro = parseInt(document.getElementById('pomodoroTime').value);
+    times.short = parseInt(document.getElementById('shortTime').value);
+    times.long = parseInt(document.getElementById('longTime').value);
+    resetTimer();
+    toggleSettings();
+  }
+
+  function playSound() {
+    const sound = document.getElementById('sound').value;
+    if (sound === 'none') return;
+    const audio = new Audio(
+      sound === 'soft'
+        ? 'https://actions.google.com/sounds/v1/alarms/soft_bell.ogg'
+        : 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg'
+    );
+    audio.play();
+  }
+</script>
+
+</body>
+</html>
